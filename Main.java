@@ -6,6 +6,7 @@ static ArrayList<Student> students=new ArrayList<>();
 static Scanner s = new Scanner(System.in);
 
 public static void main(String[] args){
+    StudentService service = new StudentService();
     int choice;
     do{
         System.out.println("========== Student Management System ==========");

@@ -1,5 +1,6 @@
 //contains student info
-public class Student{
+import java.io.Serializable;
+public class Student implements Serializable{
     private String rollNumber;
     private String name;
     private String department;
