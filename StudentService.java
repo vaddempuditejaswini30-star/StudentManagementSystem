@@ -1,282 +1,276 @@
-//manages students
-import java.util.*;
-import java.io.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Scanner;
+
 public class StudentService {
-    private ArrayList<Student> students = new ArrayList<>();
+
+    private static final String URL =
+            "jdbc:mysql://localhost:3306/student_management";
+
+    private static final String USERNAME = "root";
+
+    private static final String PASSWORD = "YOUR_NEW_PASSWORD";
+
     private Scanner s = new Scanner(System.in);
-    public StudentService() {
-        loadStudents();
-    }
-    // 1. Find student
-    public Student findStudent(String rollNumber) {
-        for (Student student : students) {
-            if (student.getrollNumber().equals(rollNumber)) {
-                return student;
-            }
-        }
-        return null;
+
+    // Create database connection
+    private Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(URL, USERNAME, PASSWORD);
     }
 
-    // 2. Validation methods
-
-    private String readName() {
-        while (true) {
-            System.out.print("Enter Name: ");
-            String name = s.nextLine();
-
-            if (name.matches("[a-zA-Z ]+")) {
-                return name;
-            }
-
-            System.out.println("Invalid Name. Please enter only alphabets.");
-        }
-    }
-
-    private String readDepartment() {
-        while (true) {
-            System.out.print("Enter Department: ");
-            String department = s.nextLine();
-
-            if (department.matches("[a-zA-Z ]+")) {
-                return department;
-            }
-
-            System.out.println("Invalid Department. Please enter only alphabets.");
-        }
-    }
-
-    private String readBranch() {
-        while (true) {
-            System.out.print("Enter Branch: ");
-            String branch = s.nextLine();
-
-            if (branch.matches("[a-zA-Z ]+")) {
-                return branch;
-            }
-
-            System.out.println("Invalid Branch. Please enter only alphabets.");
-        }
-    }
-
-    private int readSection() {
-        while (true) {
-            try {
-                System.out.print("Enter Section: ");
-                int section = s.nextInt();
-                s.nextLine();
-                return section;
-
-            } catch (InputMismatchException e) {
-                System.out.println("Invalid input. Please enter a number.");
-                s.nextLine();
-            }
-        }
-    }
-
-    private String readEmail() {
-        while (true) {
-            System.out.print("Enter Email: ");
-            String email = s.nextLine();
-
-            if (email.matches("^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+$")) {
-                return email;
-            }
-
-            System.out.println("Invalid Email. Please enter a valid email.");
-        }
-    }
-
-    private String readPhoneNumber() {
-        while (true) {
-            System.out.print("Enter Phone Number: ");
-            String phoneNumber = s.nextLine();
-
-            if (phoneNumber.matches("[0-9]{10}")) {
-                return phoneNumber;
-            }
-
-            System.out.println("Invalid Phone Number. Please enter 10 digits.");
-        }
-    }
-
-    // 3. Add student
+    // ADD STUDENT
     public void addStudent() {
+
         System.out.print("Enter Roll Number: ");
         String rollNumber = s.nextLine();
 
-        Student existingStudent = findStudent(rollNumber);
+        System.out.print("Enter Name: ");
+        String name = s.nextLine();
 
-        if (existingStudent != null) {
-            System.out.println("Student already exists");
-            return;
+        System.out.print("Enter Department: ");
+        String department = s.nextLine();
+
+        System.out.print("Enter Branch: ");
+        String branch = s.nextLine();
+
+        System.out.print("Enter Section: ");
+        int section = Integer.parseInt(s.nextLine());
+
+        System.out.print("Enter Email: ");
+        String email = s.nextLine();
+
+        System.out.print("Enter Phone Number: ");
+        String phoneNumber = s.nextLine();
+
+        String sql = "INSERT INTO students " +
+                "(rollNumber, name, department, branch, section, email, phoneNumber) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+        try (
+            Connection con = getConnection();
+            PreparedStatement ps = con.prepareStatement(sql)
+        ) {
+
+            ps.setString(1, rollNumber);
+            ps.setString(2, name);
+            ps.setString(3, department);
+            ps.setString(4, branch);
+            ps.setInt(5, section);
+            ps.setString(6, email);
+            ps.setString(7, phoneNumber);
+
+            int rows = ps.executeUpdate();
+
+            if (rows > 0) {
+                System.out.println("Student added successfully!");
+            }
+
+        } catch (SQLException e) {
+
+            if (e.getErrorCode() == 1062) {
+                System.out.println("Roll number already exists!");
+            } else {
+                System.out.println("Error while adding student.");
+                e.printStackTrace();
+            }
         }
-
-        String name = readName();
-        String department = readDepartment();
-        String branch = readBranch();
-        int section = readSection();
-        String email = readEmail();
-        String phoneNumber = readPhoneNumber();
-
-        Student student = new Student(
-            rollNumber,
-            name,
-            department,
-            branch,
-            section,
-            email,
-            phoneNumber
-        );
-
-        students.add(student);
-
-        System.out.println("Student added successfully");
-        saveStudents();
     }
 
-    // 4. View
+
+    // VIEW ALL STUDENTS
     public void viewStudents() {
-        if (students.isEmpty()) {
-            System.out.println("No Students found");
-            return;
-        }
 
-        System.out.println("List of Students:");
+        String sql = "SELECT * FROM students";
 
-        for (Student student : students) {
-            student.displayStudent();
+        try (
+            Connection con = getConnection();
+            PreparedStatement ps = con.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery()
+        ) {
+
+            boolean found = false;
+
+            while (rs.next()) {
+
+                found = true;
+
+                System.out.println("----------------------------");
+                System.out.println("Roll Number: " +
+                        rs.getString("rollNumber"));
+
+                System.out.println("Name: " +
+                        rs.getString("name"));
+
+                System.out.println("Department: " +
+                        rs.getString("department"));
+
+                System.out.println("Branch: " +
+                        rs.getString("branch"));
+
+                System.out.println("Section: " +
+                        rs.getInt("section"));
+
+                System.out.println("Email: " +
+                        rs.getString("email"));
+
+                System.out.println("Phone Number: " +
+                        rs.getString("phoneNumber"));
+            }
+
+            if (!found) {
+                System.out.println("No students found.");
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error while retrieving students.");
+            e.printStackTrace();
         }
     }
 
-    // 5. Search
+
+    // SEARCH STUDENT
     public void searchStudent() {
+
         System.out.print("Enter Roll Number to search: ");
         String rollNumber = s.nextLine();
 
-        Student existingStudent = findStudent(rollNumber);
+        String sql = "SELECT * FROM students WHERE rollNumber = ?";
 
-        if (existingStudent == null) {
-            System.out.println("Student not found");
-            return;
+        try (
+            Connection con = getConnection();
+            PreparedStatement ps = con.prepareStatement(sql)
+        ) {
+
+            ps.setString(1, rollNumber);
+
+            try (ResultSet rs = ps.executeQuery()) {
+
+                if (rs.next()) {
+
+                    System.out.println("----------------------------");
+                    System.out.println("Roll Number: " +
+                            rs.getString("rollNumber"));
+
+                    System.out.println("Name: " +
+                            rs.getString("name"));
+
+                    System.out.println("Department: " +
+                            rs.getString("department"));
+
+                    System.out.println("Branch: " +
+                            rs.getString("branch"));
+
+                    System.out.println("Section: " +
+                            rs.getInt("section"));
+
+                    System.out.println("Email: " +
+                            rs.getString("email"));
+
+                    System.out.println("Phone Number: " +
+                            rs.getString("phoneNumber"));
+
+                } else {
+                    System.out.println("Student not found!");
+                }
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error while searching student.");
+            e.printStackTrace();
         }
-
-        existingStudent.displayStudent();
     }
 
-    // 6. Update menu
-    public int updateMenu() {
-        System.out.println("1. Update Name");
-        System.out.println("2. Update Department");
-        System.out.println("3. Update Branch");
-        System.out.println("4. Update Section");
-        System.out.println("5. Update Email");
-        System.out.println("6. Update Phone Number");
 
-        System.out.print("Enter your choice: ");
-
-        int n = s.nextInt();
-        s.nextLine();
-
-        return n;
-    }
-
-    // 7. Update
+    // UPDATE STUDENT
     public void updateStudent() {
-        System.out.print("Enter Roll Number to Update: ");
+
+        System.out.print("Enter Roll Number to update: ");
         String rollNumber = s.nextLine();
 
-        Student existingStudent = findStudent(rollNumber);
+        System.out.print("Enter new Name: ");
+        String name = s.nextLine();
 
-        if (existingStudent == null) {
-            System.out.println("Student not found");
-            return;
+        System.out.print("Enter new Department: ");
+        String department = s.nextLine();
+
+        System.out.print("Enter new Branch: ");
+        String branch = s.nextLine();
+
+        System.out.print("Enter new Section: ");
+        int section = Integer.parseInt(s.nextLine());
+
+        System.out.print("Enter new Email: ");
+        String email = s.nextLine();
+
+        System.out.print("Enter new Phone Number: ");
+        String phoneNumber = s.nextLine();
+
+        String sql = "UPDATE students SET " +
+                "name = ?, " +
+                "department = ?, " +
+                "branch = ?, " +
+                "section = ?, " +
+                "email = ?, " +
+                "phoneNumber = ? " +
+                "WHERE rollNumber = ?";
+
+        try (
+            Connection con = getConnection();
+            PreparedStatement ps = con.prepareStatement(sql)
+        ) {
+
+            ps.setString(1, name);
+            ps.setString(2, department);
+            ps.setString(3, branch);
+            ps.setInt(4, section);
+            ps.setString(5, email);
+            ps.setString(6, phoneNumber);
+            ps.setString(7, rollNumber);
+
+            int rows = ps.executeUpdate();
+
+            if (rows > 0) {
+                System.out.println("Student updated successfully!");
+            } else {
+                System.out.println("Student not found!");
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error while updating student.");
+            e.printStackTrace();
         }
-
-        switch (updateMenu()) {
-
-            case 1:
-                existingStudent.setname(readName());
-                System.out.println("Name Updated Successfully.");
-                break;
-
-            case 2:
-                existingStudent.setdepartment(readDepartment());
-                System.out.println("Department Updated Successfully.");
-                break;
-
-            case 3:
-                existingStudent.setbranch(readBranch());
-                System.out.println("Branch Updated Successfully.");
-                break;
-
-            case 4:
-                int section = readSection();
-                existingStudent.setsection(section);
-                System.out.println("Section Updated Successfully.");
-                break;
-
-            case 5:
-                existingStudent.setemail(readEmail());
-                System.out.println("Email Updated Successfully.");
-                break;
-
-            case 6:
-                existingStudent.setphoneNumber(readPhoneNumber());
-                System.out.println("Phone Number Updated Successfully.");
-                break;
-
-            default:
-                System.out.println("Invalid Choice.");
-        }
-        saveStudents();
     }
 
-    // 8. Delete
+
+    // DELETE STUDENT
     public void deleteStudent() {
-        System.out.print("Enter Roll Number to Delete: ");
+
+        System.out.print("Enter Roll Number to delete: ");
         String rollNumber = s.nextLine();
 
-        Student existingStudent = findStudent(rollNumber);
+        String sql = "DELETE FROM students WHERE rollNumber = ?";
 
-        if (existingStudent == null) {
-            System.out.println("Student not found");
-            return;
-        }
+        try (
+            Connection con = getConnection();
+            PreparedStatement ps = con.prepareStatement(sql)
+        ) {
 
-        students.remove(existingStudent);
+            ps.setString(1, rollNumber);
 
-        System.out.println("Student Deleted Successfully.");
-        saveStudents();
-    }
-    private void loadStudents(){
-        try{
-            FileInputStream fis = new FileInputStream("students.dat");
-            ObjectInputStream ois = new ObjectInputStream(fis);
-            students = (ArrayList<Student>) ois.readObject();
-            ois.close();
-            fis.close();
-        }
-        catch (FileNotFoundException e) {
-        // First run — file doesn't exist yet
-        System.out.println("No saved students found. Starting with an empty list.");
-        }
-        catch(IOException e){
-            System.out.println("Error loading students:"+e.getMessage());
-        }
-        catch(ClassNotFoundException e){
-            System.out.println("Class not found:"+e.getMessage());
-        }
-    }
-    private void saveStudents(){
-        try{
-            FileOutputStream fos = new FileOutputStream("students.dat");
-            ObjectOutputStream oos = new ObjectOutputStream(fos);
-            oos.writeObject(students);
-            oos.close();
-            fos.close();
-        }
-        catch(IOException e){
-            System.out.println("Error saving students:"+e.getMessage());
+            int rows = ps.executeUpdate();
+
+            if (rows > 0) {
+                System.out.println("Student deleted successfully!");
+            } else {
+                System.out.println("Student not found!");
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error while deleting student.");
+            e.printStackTrace();
         }
     }
 }
