@@ -148,7 +148,7 @@ Java Application
        ↓
 StudentService
        ↓
-JDBC
+     JDBC
        ↓
 MySQL Connector/J
        ↓
@@ -352,6 +352,5 @@ Tejaswini Vaddempudi
 Run only:
 
 ```powershell
-git add README.md
 git commit -m "Update README for JDBC MySQL integration"
 git push origin main
